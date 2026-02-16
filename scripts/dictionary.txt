@@ -21,6 +21,9 @@ HostedZone
 konsumer
 LEANX
 Namecheap
+Omni
+OmniLayer
+Omniwallet
 ParcelJS
 treeshaking
 scaffolded
