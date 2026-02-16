@@ -20,6 +20,7 @@ const Guides = [
       'Using Deno',
       'Custom CloudFormation',
       'Create AWS credentials',
+      'AWS purchasing options',
       {
         'Continuous integration': [
           'GitHub Actions',
