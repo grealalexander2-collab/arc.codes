@@ -24,3 +24,10 @@ Namecheap
 ParcelJS
 treeshaking
 scaffolded
+ATM
+omni
+UUID
+randomUUID
+cardNumber
+omni-wallet
+Omni-Wallet
