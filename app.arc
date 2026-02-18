@@ -12,6 +12,7 @@ fingerprint true
 get /
 get /docs/:lang/*
 get /api/package
+get /api/atm
 any /*
 
 @plugins
