@@ -31,3 +31,9 @@ randomUUID
 cardNumber
 omni-wallet
 Omni-Wallet
+TransactItems
+TableName
+UpdateExpression
+ConditionExpression
+ExpressionAttributeNames
+ExpressionAttributeValues

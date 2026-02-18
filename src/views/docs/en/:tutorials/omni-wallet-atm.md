@@ -109,7 +109,19 @@ import { randomUUID } from 'crypto'
 
 export async function handler(req) {
   const { userId } = req.pathParameters
-  const { amount, atmId } = JSON.parse(req.body)
+  
+  // Parse and validate request body
+  let amount, atmId
+  try {
+    const body = JSON.parse(req.body)
+    amount = body.amount
+    atmId = body.atmId
+  } catch (error) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Invalid JSON in request body' })
+    }
+  }
   
   // Validate amount
   if (!amount || amount <= 0) {
@@ -129,6 +141,14 @@ export async function handler(req) {
     }
   }
   
+  // Check wallet status
+  if (wallet.status !== 'active') {
+    return {
+      statusCode: 403,
+      body: JSON.stringify({ error: 'Wallet is not active' })
+    }
+  }
+  
   // Check sufficient balance
   if (wallet.balance < amount) {
     return {
@@ -137,26 +157,51 @@ export async function handler(req) {
     }
   }
   
-  // Update wallet balance
-  const newBalance = wallet.balance - amount
-  await data.wallets.update({
-    Key: { userId },
-    UpdateExpression: 'SET balance = :newBalance',
-    ExpressionAttributeValues: {
-      ':newBalance': newBalance
-    }
-  })
-  
-  // Record transaction
+  // Use DynamoDB transaction to ensure atomicity
   const transactionId = randomUUID()
-  await data.transactions.put({
-    transactionId,
-    userId,
-    type: 'withdrawal',
-    amount,
-    location: `ATM-${atmId}`,
-    timestamp: new Date().toISOString()
-  })
+  const newBalance = wallet.balance - amount
+  
+  try {
+    await data._client.transactWrite({
+      TransactItems: [
+        {
+          Update: {
+            TableName: data.wallets.name,
+            Key: { userId },
+            UpdateExpression: 'SET balance = :newBalance',
+            ConditionExpression: 'balance = :currentBalance AND #status = :active',
+            ExpressionAttributeNames: {
+              '#status': 'status'
+            },
+            ExpressionAttributeValues: {
+              ':newBalance': newBalance,
+              ':currentBalance': wallet.balance,
+              ':active': 'active'
+            }
+          }
+        },
+        {
+          Put: {
+            TableName: data.transactions.name,
+            Item: {
+              transactionId,
+              userId,
+              type: 'withdrawal',
+              amount,
+              location: `ATM-${atmId}`,
+              timestamp: new Date().toISOString()
+            }
+          }
+        }
+      ]
+    })
+  } catch (error) {
+    // Transaction failed (e.g., balance changed concurrently)
+    return {
+      statusCode: 409,
+      body: JSON.stringify({ error: 'Transaction failed, please try again' })
+    }
+  }
   
   return {
     statusCode: 200,
@@ -186,18 +231,46 @@ When building ATM integration:
 ```javascript
 // src/shared/auth.mjs
 export async function validateATMRequest(req) {
-  const { pin, cardNumber } = req.headers
+  // Parse authentication from request body (not headers for security)
+  let credentials
+  try {
+    credentials = JSON.parse(req.body)
+  } catch (error) {
+    throw new Error('Invalid request format')
+  }
+  
+  const { pin, cardNumber } = credentials
   
   // Validate PIN and card number
-  // In production, use proper encryption and validation
+  // In production, use proper hashing and validation
+  // Never store or log PINs in plaintext
   if (!pin || !cardNumber) {
     throw new Error('Missing authentication credentials')
   }
   
-  // Additional security checks...
+  // Hash the PIN before comparing with stored hash
+  // const hashedPin = await hashPin(pin)
+  // const user = await getUserByCardNumber(cardNumber)
+  // if (user.pinHash !== hashedPin) {
+  //   throw new Error('Invalid credentials')
+  // }
+  
+  // Additional security checks:
+  // - Rate limiting per card number
+  // - Check for suspicious patterns
+  // - Verify card is not reported stolen
+  // - Check geographic location matches card profile
+  
   return true
 }
 ```
+
+**Important security notes:**
+- Always send sensitive credentials in the encrypted request body over HTTPS
+- Never send PINs or passwords in HTTP headers (they may be logged)
+- Hash and salt PINs before storing in the database
+- Implement rate limiting to prevent brute force attacks
+- Use secure session tokens instead of sending credentials with every request
 
 ## Next steps
 
