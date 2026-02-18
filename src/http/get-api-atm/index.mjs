@@ -10,7 +10,7 @@ export async function handler (req) {
   try {
     const queryParams = req.queryStringParameters || {}
     const amount = parseFloat(queryParams.amount) || 0
-    const accountBalance = 1000 // Simulated account balance
+    const accountBalance = parseFloat(queryParams.balance) || 1000 // Simulated account balance (default: 1000)
 
     // Validate withdrawal amount
     if (amount <= 0) {
