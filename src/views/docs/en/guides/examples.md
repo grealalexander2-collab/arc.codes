@@ -33,3 +33,10 @@ Architect is a flexible framework for dynamic applications. The following exampl
 - [Example repo for working offline and locally](https://github.com/architect-examples/arc-example-working-locally)
 
 - [Random quote generator](https://github.com/architect-examples/arc-example-random-mitch-hedberg-quote)
+
+
+## Community AWS projects
+
+- [Omniwallet - Multi-currency web wallet](https://github.com/OmniLayer/omniwallet)
+	- A hybrid web wallet for the Omni Protocol, supporting Bitcoin, OMNI, and all Omni Protocol tokens
+	- Designed to run on AWS infrastructure with a multi-tier architecture
