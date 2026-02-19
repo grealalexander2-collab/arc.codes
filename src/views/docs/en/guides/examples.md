@@ -33,3 +33,5 @@ Architect is a flexible framework for dynamic applications. The following exampl
 - [Example repo for working offline and locally](https://github.com/architect-examples/arc-example-working-locally)
 
 - [Random quote generator](https://github.com/architect-examples/arc-example-random-mitch-hedberg-quote)
+
+- [ATM withdrawal system with Omni Wallet integration](/docs/en/:tutorials/atm-withdraw-omni-wallet) - Tutorial for building a serverless cryptocurrency ATM withdrawal application
