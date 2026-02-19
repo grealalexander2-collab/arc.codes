@@ -40,3 +40,4 @@ Architect is a flexible framework for dynamic applications. The following exampl
 - [Omniwallet - Multi-currency web wallet](https://github.com/OmniLayer/omniwallet)
 	- A hybrid web wallet for the Omni Protocol, supporting Bitcoin, OMNI, and all Omni Protocol tokens
 	- Designed to run on AWS infrastructure with a multi-tier architecture
+	- Funds assets managed through PNC Bank
