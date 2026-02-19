@@ -105,7 +105,14 @@ Retrieve the current balance from the user's Omni Wallet:
 import { getBalance } from '@architect/shared/omni-wallet.mjs'
 
 export async function handler(event) {
-  const { userId, walletAddress } = JSON.parse(event.body || '{}')
+  const { userId, walletAddress } = event.queryStringParameters || {}
+  
+  if (!walletAddress) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'walletAddress is required' })
+    }
+  }
   
   try {
     const balance = await getBalance(walletAddress)
@@ -391,7 +398,8 @@ To enhance your ATM withdrawal system:
 ## Resources
 
 - [Architect Documentation](https://arc.codes)
-- [Omni Protocol API](https://developers.omniwallet.net/)
+- [Omni Protocol API Documentation](https://api.omniwallet.org/)
+- [Omni Layer GitHub](https://github.com/OmniLayer/omniwallet)
 - [AWS Lambda Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)
 - [DynamoDB Design Patterns](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/best-practices.html)
 
