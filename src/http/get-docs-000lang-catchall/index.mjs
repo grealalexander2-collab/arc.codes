@@ -10,9 +10,55 @@ import algolia from '@architect/views/modules/components/algolia.mjs'
 import Html from '@architect/views/modules/document/html.mjs'
 import NotFound from '@architect/views/modules/components/not-found.mjs'
 import toc from '@architect/views/docs/table-of-contents.mjs'
+import slugify from '@architect/views/modules/helpers/slugify.mjs'
 import classMap from './markdown-class-mappings.mjs'
 
 const cache = {} // cheap warm cache
+
+function getFirstLeaf (data, pathPrefix) {
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (typeof item === 'string') {
+        return `${pathPrefix}/${slugify(item)}`
+      }
+      else if (typeof item === 'object') {
+        for (const [ key, value ] of Object.entries(item)) {
+          return getFirstLeaf(value, `${pathPrefix}/${slugify(key)}`)
+        }
+      }
+    }
+  }
+  else if (data && typeof data === 'object') {
+    for (const [ key, value ] of Object.entries(data)) {
+      return getFirstLeaf(value, `${pathPrefix}/${slugify(key)}`)
+    }
+  }
+  return null
+}
+
+function findFirstDocPath (data, segments, pathPrefix = '/docs/en') {
+  if (!segments.length) return getFirstLeaf(data, pathPrefix)
+  const [ head, ...tail ] = segments
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (typeof item === 'object') {
+        for (const [ key, value ] of Object.entries(item)) {
+          if (slugify(key) === head) {
+            return findFirstDocPath(value, tail, `${pathPrefix}/${head}`)
+          }
+        }
+      }
+    }
+  }
+  else if (data && typeof data === 'object') {
+    for (const [ key, value ] of Object.entries(data)) {
+      if (slugify(key) === head) {
+        return findFirstDocPath(value, tail, `${pathPrefix}/${head}`)
+      }
+    }
+  }
+  return null
+}
 
 async function handler (req) {
   const { path, pathParameters } = req
@@ -95,7 +141,13 @@ async function handler (req) {
     }
   }
   catch (error) {
-    // TODO: Load category "index" landing if available
+    // Load category index landing if available
+    if (error.code === 'ENOENT') {
+      const categoryPath = findFirstDocPath(toc, [ ...parts, docName ], `/docs/${lang}`)
+      if (categoryPath) {
+        return { statusCode: 302, headers: { location: categoryPath } }
+      }
+    }
     console.error(error)
     return {
       ...notFoundResponse,
