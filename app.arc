@@ -12,6 +12,12 @@ fingerprint true
 get /
 get /docs/:lang/*
 get /api/package
-get /arc-data
-get /arc-viewer
 any /*
+
+@plugins
+spellcheck
+architect/plugin-node-prune
+enhance/arc-plugin-styles
+
+@enhance-styles
+config theme.json
