@@ -40,3 +40,13 @@ Architect is a flexible framework for dynamic applications. The following exampl
 - [Omniwallet - Multi-currency web wallet](https://github.com/OmniLayer/omniwallet)
 	- A hybrid web wallet for the Omni Protocol, supporting Bitcoin, OMNI, and all Omni Protocol tokens
 	- Designed to run on AWS infrastructure with a multi-tier architecture
+
+- [Circle Wallet - Programmable wallet platform](https://github.com/P8Labs/circle_wallet)
+	- Custom wallet built on Circle's programmable wallets platform with USDC support
+	- Features wallet creation, token transfers, recovery, and social login capabilities
+	- Built with Next.js, MongoDB, and modern web technologies
+
+- [BankrWallet - AI-powered crypto wallet](https://github.com/apoorvlathey/bankr-wallet)
+	- Browser extension wallet supporting multiple blockchains including Ethereum, Base, Polygon, and Unichain
+	- Integrates with Bankr AI agent for natural language wallet management
+	- Features encrypted API key storage and cross-chain transaction support

@@ -3,13 +3,16 @@
 ACM
 ApiGatewayManagementApi
 arc-example-cors
+Bankr
 Bundler
 CJS
 Cloudflare
 CommonJS
+crypto
 csv|CSV|.csv
 Dreamhost
 ESM
+Ethereum
 FQDN
 FWAs
 getConnection
@@ -27,3 +30,5 @@ Omniwallet
 ParcelJS
 treeshaking
 scaffolded
+Unichain
+USDC
