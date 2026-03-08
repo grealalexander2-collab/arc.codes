@@ -25,5 +25,6 @@ Omni
 OmniLayer
 Omniwallet
 ParcelJS
+PNC
 treeshaking
 scaffolded
