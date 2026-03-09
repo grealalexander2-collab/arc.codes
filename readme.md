@@ -13,7 +13,7 @@
 
 ## Docs Development
 
-> ℹ️  We're actively improving Architect documentation, this repository, and this readme
+> ℹ️  This repository contains the Architect documentation site
 
 This docs site is its own Architect project 🎉 so it can be run locally with `npx arc sandbox`
 
@@ -42,9 +42,9 @@ The frontmatter attributes are technically optional but highly encouraged as the
 
 ## Todo
 
-* dynamic category landing page
+* ~~dynamic category landing page~~
 * writing style guide
-* a homepage
+* ~~a homepage~~
 * ~~dark mode~~
 
 ## Contributing
