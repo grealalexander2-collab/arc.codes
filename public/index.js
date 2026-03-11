@@ -7,6 +7,9 @@
   const themeButton = document.getElementById('theme-button')
   const codeBlocks = document.querySelectorAll('pre.hljs')
 
+  // Initialize Arc Viewer components if on Arc page
+  initializeArcViewer()
+
   // Scroll active sidebar link into view
   if (activeLink)
     activeLink.scrollIntoView({
@@ -122,4 +125,72 @@
       observer.observe(header)
     })
   })
+
+  /**
+   * Initialize Arc Viewer if the page has arc-viewer element
+   */
+  function initializeArcViewer () {
+    const arcViewerElement = document.getElementById('arc-viewer')
+    if (!arcViewerElement) return
+
+    // Dynamically import Arc viewer modules
+    Promise.all([
+      import('./components/arc-tree-viewer.js'),
+      import('./components/arc-watcher.js'),
+      import('./components/arc-file-linker.js'),
+      import('./components/arc-search.js'),
+      import('./components/arc-copy.js'),
+    ]).then(([viewerMod, watcherMod, linkerMod, searchMod, copyMod]) => {
+      const { ArcTreeViewer } = viewerMod
+      const { ArcWatcher } = watcherMod
+      const { ArcFileLinker } = linkerMod
+      const { ArcSearch } = searchMod
+      const { ArcCopy } = copyMod
+
+      // Initialize components
+      const viewer = new ArcTreeViewer({
+        container: arcViewerElement,
+      })
+
+      const watcher = new ArcWatcher({
+        arcDataUrl: '/arc-data',
+        pollInterval: 2000,
+      })
+
+      const linker = new ArcFileLinker()
+      const searcher = new ArcSearch()
+      const copier = new ArcCopy()
+
+      // Fetch initial Arc data
+      fetch('/arc-data')
+        .then(res => res.json())
+        .then(data => {
+          viewer.init(data)
+          searcher.init(data)
+
+          // Setup node click handler
+          viewer.onNodeClick = (nodeId) => {
+            const node = viewer.getNode(nodeId)
+            if (node) {
+              const linkPath = linker.getLink(node.type, node.data.name || node.data.path)
+              console.log('Node clicked:', { nodeId, node, linkPath })
+            }
+          }
+
+          // Setup watcher
+          watcher.onArcChanged = async (newData) => {
+            viewer.init(newData)
+            searcher.init(newData)
+            console.log('Arc data updated')
+          }
+          watcher.start()
+        })
+        .catch(err => {
+          console.error('Failed to initialize Arc Viewer:', err)
+          arcViewerElement.innerHTML = '<p style="color: red;">Failed to load Arc data</p>'
+        })
+    }).catch(err => {
+      console.error('Failed to load Arc modules:', err)
+    })
+  }
 }())

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arc Viewer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+      color: #222;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 0.95em;
+    }
+
+    #arc-viewer {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    .arc-tree-viewer {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .tree-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 15px;
+    }
+
+    .tree-header h2 {
+      font-size: 1.3em;
+      color: #222;
+    }
+
+    .tree-controls {
+      display: flex;
+      gap: 15px;
+    }
+
+    .tree-controls label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.9em;
+      user-select: none;
+    }
+
+    .tree-controls input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #0066cc;
+    }
+
+    .tree-search {
+      margin-bottom: 10px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95em;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #0066cc;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+
+    .tree-container {
+      max-height: 600px;
+      overflow-y: auto;
+      padding: 10px 0;
+    }
+
+    .tree-list {
+      list-style: none;
+    }
+
+    .tree-node {
+      margin: 4px 0;
+    }
+
+    .tree-node-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      user-select: none;
+    }
+
+    .tree-node-content:hover {
+      background-color: #f0f0f0;
+    }
+
+    .tree-node-content:active {
+      background-color: #e0e0e0;
+    }
+
+    .tree-group .tree-node-content {
+      font-weight: 600;
+      color: #0066cc;
+    }
+
+    .tree-toggle,
+    .tree-toggle-empty {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    .tree-toggle {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .tree-children.collapsed {
+      display: none;
+    }
+
+    .tree-icon {
+      font-size: 1em;
+    }
+
+    .tree-label {
+      flex: 1;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    .copy-btn {
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background-color: #f0f0f0;
+      border-color: #bbb;
+    }
+
+    .copy-btn:active {
+      background-color: #e0e0e0;
+    }
+
+    .tree-empty {
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 0.95em;
+    }
+
+    .tree-no-match {
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 0.95em;
+      background-color: #fafafa;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+
+    .arc-toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      max-width: 300px;
+      word-wrap: break-word;
+      z-index: 1000;
+    }
+
+    .arc-toast-show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .arc-toast-success {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .arc-toast-error {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .arc-toast-info {
+      background-color: #2196f3;
+      color: white;
+    }
+
+    .watcher-status {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .watcher-status.connected {
+      background-color: #e8f5e9;
+      border-color: #4caf50;
+      color: #2e7d32;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #999;
+      animation: pulse 2s infinite;
+    }
+
+    .watcher-status.connected .status-dot {
+      background-color: #4caf50;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+
+      .tree-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .tree-controls {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+
+      .arc-toast {
+        bottom: 10px;
+        right: 10px;
+        max-width: calc(100vw - 20px);
+      }
+
+      .watcher-status {
+        bottom: 10px;
+        left: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏗️ Arc Viewer</h1>
+      <p class="subtitle">Interactive tree view of your Arc application structure with live reload capabilities</p>
+    </header>
+
+    <div id="arc-viewer"></div>
+    <div class="watcher-status" id="watcher-status">
+      <span class="status-dot"></span>
+      <span>Watching...</span>
+    </div>
+  </div>
+
+  <script>
+    class ArcTreeViewer {
+      constructor(options = {}) {
+        this.container = options.container || document.body;
+        this.arcData = options.arcData || {};
+        this.onNodeClick = options.onNodeClick || (() => {});
+        this.toggleStates = {
+          routes: true,
+          lambdas: true,
+          tables: true,
+        };
+      }
+
+      async init(arcData) {
+        if (arcData) {
+          this.arcData = arcData;
+        }
+        this.render();
+        this.setupEventListeners();
+      }
+
+      buildTree() {
+        const tree = [];
+
+        if (this.toggleStates.routes && this.arcData.routes?.length > 0) {
+          tree.push({
+            id: 'routes-group',
+            name: 'Routes',
+            children: this.arcData.routes.map((route, idx) => ({
+              id: `route-${idx}`,
+              name: `${route.method} ${route.path}`,
+              path: route.path,
+              method: route.method,
+              functionName: route.functionName,
+              type: 'route',
+            })),
+          });
+        }
+
+        if (this.toggleStates.lambdas && this.arcData.lambdas?.length > 0) {
+          tree.push({
+            id: 'lambdas-group',
+            name: 'Lambdas',
+            children: this.arcData.lambdas.map((lambda, idx) => ({
+              id: `lambda-${idx}`,
+              name: lambda.name,
+              type: 'lambda',
+            })),
+          });
+        }
+
+        if (this.toggleStates.tables && this.arcData.tables?.length > 0) {
+          tree.push({
+            id: 'tables-group',
+            name: 'Tables',
+            children: this.arcData.tables.map((table, idx) => ({
+              id: `table-${idx}`,
+              name: table.name,
+              type: 'table',
+            })),
+          });
+        }
+
+        return tree;
+      }
+
+      render() {
+        const tree = this.buildTree();
+
+        const html = `
+          <div class="arc-tree-viewer">
+            <div class="tree-header">
+              <h2>Arc Viewer</h2>
+              <div class="tree-controls">
+                <label><input type="checkbox" class="toggle-routes" checked> Routes</label>
+                <label><input type="checkbox" class="toggle-lambdas" checked> Lambdas</label>
+                <label><input type="checkbox" class="toggle-tables" checked> Tables</label>
+              </div>
+            </div>
+            <div class="tree-search">
+              <input type="text" class="search-input" placeholder="Search routes, lambdas, tables..." />
+            </div>
+            <div class="tree-container">
+              ${this.renderTreeNodes(tree)}
+            </div>
+          </div>
+        `;
+
+        this.container.innerHTML = html;
+      }
+
+      renderTreeNodes(nodes, depth = 0) {
+        if (!nodes || nodes.length === 0) {
+          return '<div class="tree-empty">No items</div>';
+        }
+
+        return `
+          <ul class="tree-list" style="margin-left: ${depth * 20}px;">
+            ${nodes.map(node => this.renderNode(node, depth)).join('')}
+          </ul>
+        `;
+      }
+
+      renderNode(node, depth) {
+        const hasChildren = node.children && node.children.length > 0;
+        const icon = this.getNodeIcon(node.type);
+        const isGroup = node.id && node.id.includes('-group');
+
+        return `
+          <li class="tree-node ${isGroup ? 'tree-group' : ''}" data-node-id="${node.id}">
+            <div class="tree-node-content" data-node-id="${node.id}">
+              ${hasChildren ? '<span class="tree-toggle">▼</span>' : '<span class="tree-toggle-empty">•</span>'}
+              <span class="tree-icon">${icon}</span>
+              <span class="tree-label">${this.escapeHtml(node.name)}</span>
+              ${!isGroup && node.type === 'route' ? `<button class="copy-btn" data-value="${node.method} ${node.path}" title="Copy route">📋</button>` : ''}
+            </div>
+            ${hasChildren ? `<div class="tree-children">${this.renderTreeNodes(node.children, depth + 1)}</div>` : ''}
+          </li>
+        `;
+      }
+
+      getNodeIcon(type) {
+        const icons = {
+          route: '🛣️',
+          lambda: '⚡',
+          table: '📊',
+        };
+        return icons[type] || '📄';
+      }
+
+      setupEventListeners() {
+        this.container.querySelectorAll('.tree-toggle').forEach(toggle => {
+          toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const li = e.target.closest('li');
+            const children = li.querySelector('.tree-children');
+            if (children) {
+              children.classList.toggle('collapsed');
+            }
+          });
+        });
+
+        this.container.querySelectorAll('.tree-node-content').forEach(node => {
+          node.addEventListener('click', (e) => {
+            if (!e.target.closest('.copy-btn')) {
+              const nodeId = e.target.closest('.tree-node-content')?.dataset.nodeId;
+              if (nodeId && this.onNodeClick) {
+                this.onNodeClick(nodeId, this.arcData);
+              }
+            }
+          });
+        });
+
+        this.container.querySelectorAll('.copy-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const value = e.target.dataset.value;
+            try {
+              await navigator.clipboard.writeText(value);
+              const originalText = e.target.textContent;
+              e.target.textContent = '✓ Copied!';
+              setTimeout(() => {
+                e.target.textContent = originalText;
+              }, 2000);
+            } catch (err) {
+              console.error('Failed to copy:', err);
+              e.target.textContent = '✗ Failed';
+              setTimeout(() => {
+                e.target.textContent = originalText;
+              }, 2000);
+            }
+          });
+        });
+
+        this.container.querySelector('.toggle-routes')?.addEventListener('change', (e) => {
+          this.toggleStates.routes = e.target.checked;
+          this.render();
+          this.setupEventListeners();
+        });
+
+        this.container.querySelector('.toggle-lambdas')?.addEventListener('change', (e) => {
+          this.toggleStates.lambdas = e.target.checked;
+          this.render();
+          this.setupEventListeners();
+        });
+
+        this.container.querySelector('.toggle-tables')?.addEventListener('change', (e) => {
+          this.toggleStates.tables = e.target.checked;
+          this.render();
+          this.setupEventListeners();
+        });
+
+        const searchInput = this.container.querySelector('.search-input');
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            this.filterTree(e.target.value);
+          });
+        }
+      }
+
+      filterTree(query) {
+        const nodes = this.container.querySelectorAll('.tree-node');
+        let matchCount = 0;
+
+        nodes.forEach(node => {
+          const label = node.querySelector('.tree-label');
+          if (!label) return;
+
+          const text = label.textContent.toLowerCase();
+          const matches = text.includes(query.toLowerCase());
+
+          node.style.display = matches || query === '' ? '' : 'none';
+          if (matches && query !== '') {
+            matchCount++;
+            let parent = node.closest('.tree-children');
+            while (parent) {
+              parent.classList.remove('collapsed');
+              parent = parent.parentElement?.closest('.tree-children');
+            }
+          }
+        });
+
+        const treeContainer = this.container.querySelector('.tree-container');
+        let noMatch = this.container.querySelector('.tree-no-match');
+        if (query && matchCount === 0) {
+          if (!noMatch) {
+            noMatch = document.createElement('div');
+            noMatch.className = 'tree-no-match';
+            noMatch.textContent = `No matches for "${query}"`;
+            treeContainer.appendChild(noMatch);
+          }
+        } else if (noMatch) {
+          noMatch.remove();
+        }
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      getNode(nodeId) {
+        const routes = this.arcData.routes || [];
+        const lambdas = this.arcData.lambdas || [];
+        const tables = this.arcData.tables || [];
+
+        if (nodeId.startsWith('route-')) {
+          const idx = parseInt(nodeId.split('-')[1]);
+          return { type: 'route', data: routes[idx] };
+        }
+        if (nodeId.startsWith('lambda-')) {
+          const idx = parseInt(nodeId.split('-')[1]);
+          return { type: 'lambda', data: lambdas[idx] };
+        }
+        if (nodeId.startsWith('table-')) {
+          const idx = parseInt(nodeId.split('-')[1]);
+          return { type: 'table', data: tables[idx] };
+        }
+        return null;
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `arc-toast arc-toast-${type}`;
+      toast.textContent = message;
+      
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('arc-toast-show');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.remove('arc-toast-show');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 2000);
+    }
+
+    const viewerElement = document.getElementById('arc-viewer');
+    const watcherStatusElement = document.getElementById('watcher-status');
+
+    const viewer = new ArcTreeViewer({ container: viewerElement });
+    let lastData = null;
+
+    async function initArcViewer() {
+      try {
+        const response = await fetch('/arc-data');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const arcData = await response.json();
+        
+        await viewer.init(arcData);
+        lastData = JSON.stringify(arcData);
+
+        viewer.onNodeClick = (nodeId) => {
+          const node = viewer.getNode(nodeId);
+          if (node) {
+            console.log('Clicked node:', { nodeId, type: node.type });
+            showToast(`Node: ${node.data.name || node.data.path}`, 'info');
+          }
+        };
+
+        setInterval(async () => {
+          try {
+            const response = await fetch('/arc-data');
+            if (!response.ok) return;
+            const newData = await response.json();
+            const newDataStr = JSON.stringify(newData);
+            
+            if (lastData !== newDataStr) {
+              lastData = newDataStr;
+              console.log('Arc data updated, refreshing viewer...');
+              await viewer.init(newData);
+              showToast('Arc data updated', 'info');
+            }
+          } catch (error) {
+            console.error('Poll error:', error);
+          }
+        }, 2000);
+
+        watcherStatusElement.classList.add('connected');
+        watcherStatusElement.querySelector('span:last-child').textContent = 'Connected';
+      } catch (error) {
+        console.error('Failed to initialize Arc Viewer:', error);
+        viewerElement.innerHTML = '<p style="color: red; padding: 20px;">Failed to load Arc data. Make sure the server is running and /arc-data endpoint is available.</p>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initArcViewer);
+    if (document.readyState !== 'loading') {
+      initArcViewer();
+    }
+  </script>
+</body>
+</html>
